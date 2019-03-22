@@ -6,7 +6,9 @@
 
 package serviced
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type object struct {
 	Type  string

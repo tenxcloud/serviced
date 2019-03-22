@@ -25,6 +25,7 @@ type RemoteService interface {
 }
 
 type proxy struct {
+	// auto injected
 	serviced.TransparentProxy
 }
 
@@ -86,6 +87,22 @@ func (ioFactory) New() (s interface{}, err error) {
 	return
 }
 
+// The real world code may looks like this
+//
+//func (i io) Run() {
+//	go func() {
+//		for {
+//			message := <-i.inChannel
+//			i.websocket.Send(message)
+//		}
+//	}()
+//	go func() {
+//		var message Message
+//		i.websocket.Receive(&message)
+//		i.outChannel <- &message
+//	}()
+//}
+
 func (i io) In() (rawMessage <-chan *serviced.Message) {
 	return i.channel
 }
@@ -94,24 +111,31 @@ func (i io) Out() (rawMessage chan<- *serviced.Message) {
 	return i.channel
 }
 
+func register(builder serviced.KernelBuilder) (err error) {
+	if err = serviced.RegisterDefault(builder); err != nil {
+		return
+	}
+	if err = builder.RegisterService(new(RemoteService), new(proxy)); err != nil {
+		return
+	}
+	if err = builder.RegisterFactory(new(serviced.IO), new(ioFactory)); err != nil {
+		return
+	}
+	if err = builder.RegisterType(new(One)); err != nil {
+		return
+	}
+	if err = builder.RegisterType(new(Two)); err != nil {
+		return
+	}
+	if err = builder.RegisterService(new(LocalService), new(module)); err != nil {
+		return
+	}
+	return
+}
+
 func main() {
 	builder := serviced.NewKernelBuilder()
-	if err := serviced.RegisterDefault(builder); err != nil {
-		panic(err)
-	}
-	if err := builder.RegisterService(new(RemoteService), new(proxy)); err != nil {
-		panic(err)
-	}
-	if err := builder.RegisterFactory(new(serviced.IO), new(ioFactory)); err != nil {
-		panic(err)
-	}
-	if err := builder.RegisterType(new(One)); err != nil {
-		panic(err)
-	}
-	if err := builder.RegisterType(new(Two)); err != nil {
-		panic(err)
-	}
-	if err := builder.RegisterService(new(LocalService), new(module)); err != nil {
+	if err := register(builder); err != nil {
 		panic(err)
 	}
 	kernel := builder.Build()
@@ -128,9 +152,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// resolve out, with dependencies injected
 	ls := service.(LocalService)
 	one := ls.Do(Two{Value: "two"})
 	fmt.Printf("Local service invocation: %s\n", one.Value)
+	// remote service injected, underneath object is a proxy
 	two := ls.GetDependence().Do(One{Value: "one"})
 	fmt.Printf("Remote service: %s", two.Value)
 }

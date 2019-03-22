@@ -17,5 +17,5 @@ var (
 	ErrTypeNotImplementService   = errors.New("type not implement service")
 	ErrInvalidMessage            = errors.New("invalid message")
 	ErrNoSuchInvocation          = errors.New("no such invocation")
-	ErrNosuchMethod              = errors.New("no such method")
+	ErrNoSuchMethod              = errors.New("no such method")
 )

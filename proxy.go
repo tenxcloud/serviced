@@ -25,7 +25,7 @@ type proxy struct {
 
 func (p proxy) ensureMethod(method string) (err error) {
 	if _, exist := p.Service.MethodByName(method); !exist {
-		err = ErrNosuchMethod
+		err = ErrNoSuchMethod
 	}
 	return
 }
