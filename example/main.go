@@ -9,7 +9,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/tedli/serviced"
+	"github.com/tenxcloud/serviced"
 )
 
 type One struct {
