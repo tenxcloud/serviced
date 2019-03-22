@@ -39,9 +39,11 @@ func (p proxy) Do(one One) (two Two) {
 
 type LocalService interface {
 	Do(two Two) (one One)
+	GetDependence() RemoteService
 }
 
 type module struct {
+	Dependence RemoteService
 }
 
 func (module) Do(two Two) (one One) {
@@ -49,6 +51,10 @@ func (module) Do(two Two) (one One) {
 	fmt.Printf("Two: %s", two.Value)
 	one = One{Value: "one"}
 	return
+}
+
+func (m module) GetDependence() RemoteService {
+	return m.Dependence
 }
 
 // This is a debug entry. Server side should implement the service
@@ -108,10 +114,6 @@ func main() {
 		panic(err)
 	}
 	kernel := builder.Build()
-	service, err := kernel.ResolveService(new(RemoteService))
-	if err != nil {
-		panic(err)
-	}
 	server, err := kernel.ResolveService(new(serviced.Server))
 	if err != nil {
 		panic(err)
@@ -121,12 +123,13 @@ func main() {
 			panic(err)
 		}
 	}()
-	two := service.(RemoteService).Do(One{Value: "one"})
-	fmt.Printf("Remote call returns: %s\n", two.Value)
-	service, err = kernel.ResolveService(new(LocalService))
+	service, err := kernel.ResolveService(new(LocalService))
 	if err != nil {
 		panic(err)
 	}
-	one := service.(LocalService).Do(Two{Value: "two"})
+	ls := service.(LocalService)
+	one := ls.Do(Two{Value: "two"})
 	fmt.Printf("Local service invocation: %s\n", one.Value)
+	two := ls.GetDependence().Do(One{Value: "one"})
+	fmt.Printf("Remote service: %s", two.Value)
 }
