@@ -43,12 +43,13 @@ type LocalService interface {
 }
 
 type module struct {
+	// this field can be auto injected
 	Dependence RemoteService
 }
 
 func (module) Do(two Two) (one One) {
 	fmt.Println("module")
-	fmt.Printf("Two: %s", two.Value)
+	fmt.Printf("Two: %s\n", two.Value)
 	one = One{Value: "one"}
 	return
 }
